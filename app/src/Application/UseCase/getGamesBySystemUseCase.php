@@ -8,7 +8,7 @@ use App\Domain\Games\GamePaginationException;
 use App\Domain\Games\GamesCollection;
 use App\Domain\GamesRepositoryInterface;
 
-class getGamesByCompanyUseCase
+class getGamesBySystemUseCase
 {
     /** @var GamesRepositoryInterface */
     private $gamesRepository;
@@ -27,6 +27,6 @@ class getGamesByCompanyUseCase
         if ($page === 0) {
             throw GamePaginationException::build();
         }
-        return $this->gamesRepository->getGamesByCompany($id, $page)->toJson();
+        return $this->gamesRepository->getGamesBySystem($id, $page)->toJson();
     }
 }

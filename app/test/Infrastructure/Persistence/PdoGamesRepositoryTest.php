@@ -18,9 +18,46 @@ class PdoGamesRepositoryTest extends TestCase
         $this->sut = new PdoGamesRepository();
     }
 
-    /*public function testGetAllGames(): void
+    public function testGetAllGamesHappyPath(): void
     {
-        var_dump($this->sut->getAllGames());
-        die();
-    }*/
+        $result = $this->sut->getAllGames(1);
+        $this->assertEquals(3, $result->count());
+    }
+
+    public function testGetAllGamesWhenPageIsOutOfRange(): void
+    {
+        $result = $this->sut->getAllGames(1000);
+        $this->assertEquals(0, $result->count());
+        $this->assertEquals('{}', $result->toJson());
+    }
+
+    public function testGetGamesByCompanyHappyPath(): void
+    {
+        $result = $this->sut->getGamesByCompany(1, 1);
+        $this->assertEquals(3, $result->count());
+    }
+
+    public function testGetGamesByCompanyCheckGamesAreFromCorrectCompany(): void
+    {
+        $result = $this->sut->getGamesByCompany(1, 1);
+        foreach ($result->collection() as $game)
+        {
+            $this->assertEquals('SEGA', $game->company());
+        }
+    }
+
+    public function testGetGamesBySystemHappyPath(): void
+    {
+        $result = $this->sut->getGamesBySystem(1, 1);
+        $this->assertEquals(3, $result->count());
+    }
+
+    public function testGetGamesByCompanyCheckGamesAreFromCorrectSystem(): void
+    {
+        $result = $this->sut->getGamesBySystem(1, 1);
+        foreach ($result->collection() as $game)
+        {
+            $this->assertEquals('Master System', $game->system());
+        }
+    }
 }

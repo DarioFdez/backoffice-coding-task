@@ -9,64 +9,134 @@ use App\Domain\Games\GamesCollection;
 use App\Domain\GamesRepositoryInterface;
 use DateTime;
 use PDO;
+use PDOStatement;
 
 class PdoGamesRepository implements GamesRepositoryInterface
 {
+    private const QUERY_OFFSET = 3;
     /** @var PDO */
     private $pdo;
+    /** @var int */
+    private $offset;
 
     public function __construct()
     {
-        $dsn = "mysql:host=db;port=3306;dbname=good_old_videogames;charset=utf8";
-        $this->pdo = new PDO($dsn, 'root', 'root');
+        $this->pdo = PdoDefinition::build();
+        $this->offset = self::QUERY_OFFSET;
     }
     public function getGamesByCompany(int $companyId, int $page): ?GamesCollection
     {
-        // TODO: Implement getGamesByCompany() method.
+        $start = $this->getPagination($page);
+        $query = $this->pdo->prepare(
+            <<<SQL
+                SELECT
+                    games.id,
+                    games.title,
+                    games.released_on,
+                    companies.name as companyName,
+                    companies.location,
+                    systems.name as systemName,
+                    games.type
+                FROM
+                    games
+                INNER JOIN
+                        companies ON games.company_id = companies.id
+                INNER JOIN
+                        systems ON games.system_id = systems.id
+                WHERE games.company_id = :company_id
+                LIMIT :start , :offset
+SQL
+        );
+        $query->bindParam(':start', $start, PDO::PARAM_INT);
+        $query->bindParam(':company_id', $companyId, PDO::PARAM_INT);
+        $query->bindParam(':offset', $this->offset, PDO::PARAM_INT);
+        $query->execute();
+
+        return $this->buildGamesCollectionFromRaw($query);
     }
 
     public function getGamesBySystem(int $systemId, int $page): ?GamesCollection
     {
-        // TODO: Implement getGamesBySystem() method.
+        $start = $this->getPagination($page);
+        $query = $this->pdo->prepare(
+            <<<SQL
+                SELECT
+                    games.id,
+                    games.title,
+                    games.released_on,
+                    companies.name as companyName,
+                    companies.location,
+                    systems.name as systemName,
+                    games.type
+                FROM
+                    games
+                INNER JOIN
+                        companies ON games.company_id = companies.id
+                INNER JOIN
+                        systems ON games.system_id = systems.id
+                WHERE games.system_id = :system_id
+                LIMIT :start , :offset
+SQL
+        );
+        $query->bindParam(':start', $start, PDO::PARAM_INT);
+        $query->bindParam(':system_id', $systemId, PDO::PARAM_INT);
+        $query->bindParam(':offset', $this->offset, PDO::PARAM_INT);
+        $query->execute();
+
+        return $this->buildGamesCollectionFromRaw($query);
     }
 
     public function getAllGames(int $page): GamesCollection
     {
-        $offset = $page + 3;
+        $start = $this->getPagination($page);
         $query = $this->pdo->prepare(
-            "SELECT
-                games.id,
-                games.title,
-                games.released_on,
-                companies.name as companyName,
-                companies.location,
-                systems.name as systemName,
-                games.type
-            FROM
-                games
-            INNER JOIN
-                    companies ON games.company_id = companies.id
-            INNER JOIN
-                    systems ON games.system_id = systems.id
-            LIMIT :page , :offset"
+            <<<SQL
+                SELECT
+                    games.id,
+                    games.title,
+                    games.released_on,
+                    companies.name as companyName,
+                    companies.location,
+                    systems.name as systemName,
+                    games.type
+                FROM
+                    games
+                INNER JOIN
+                        companies ON games.company_id = companies.id
+                INNER JOIN
+                        systems ON games.system_id = systems.id
+                LIMIT :start , :offset
+SQL
         );
-        $query->bindParam(':page', $page, PDO::PARAM_INT);
-        $query->bindParam('offset', $offset, PDO::PARAM_INT);
+        $query->bindParam(':start', $start, PDO::PARAM_INT);
+        $query->bindParam(':offset', $this->offset, PDO::PARAM_INT);
         $query->execute();
 
-       $games = [];
-       foreach ($query->fetchAll() as $game) {
-           $games[] = new Game(
-               $game['id'],
-               $game['title'],
-               DateTime::createFromFormat('Y-m-d', $game['release_on']),
-               $game['companyName'],
-               $game['location'],
-               $game['systemName'],
-               $game['type']
-           );
-       }
+        return $this->buildGamesCollectionFromRaw($query);
+    }
 
-       return new GamesCollection(...$games);
+    private function buildGamesCollectionFromRaw(PDOStatement $raw): GamesCollection
+    {
+        $games = [];
+        foreach ($raw->fetchAll() as $game) {
+            $games[] = new Game(
+                (int)$game['id'],
+                $game['title'],
+                DateTime::createFromFormat('Y-m-d', $game['released_on']),
+                $game['companyName'],
+                $game['location'],
+                $game['systemName'],
+                $game['type']
+            );
+        }
+
+        return new GamesCollection(...$games);
+    }
+
+    private function getPagination(int $page)
+    {
+        return $page === 1
+            ? 0
+            : $page * $this->offset;
     }
 }

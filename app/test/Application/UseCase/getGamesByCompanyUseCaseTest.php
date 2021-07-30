@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Tests\Application\UseCase;
 
 use App\Application\UseCase\getAllGamesUseCase;
+use App\Application\UseCase\getGamesByCompanyUseCase;
 use App\Domain\Games\GamePaginationException;
 use App\Domain\GamesRepositoryInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Tests\Domain\Games\GamesCollectionMotherObject;
 
-class getAllGamesUseCaseTest extends TestCase
+class getGamesByCompanyUseCaseTest extends TestCase
 {
     /** @var GamesRepositoryInterface|MockObject */
     private $repository;
@@ -22,24 +23,27 @@ class getAllGamesUseCaseTest extends TestCase
     {
         parent::setUp();
         $this->repository = $this->createMock(GamesRepositoryInterface::class);
-        $this->sut = new getAllGamesUseCase($this->repository);
+        $this->sut = new getGamesByCompanyUseCase($this->repository);
     }
 
-    public function testGetAllGames(): void
+    public function testGamesFromCompany(): void
     {
         $this->repository
             ->expects(self::once())
-            ->method('getAllGames')
-            ->willReturn(GamesCollectionMotherObject::buildAllGames());
+            ->method('getGamesByCompany')
+            ->willReturn(GamesCollectionMotherObject::buildGamesFromCompany());
 
-        $result = $this->sut->execute(1);
+        $result = $this->sut->execute(1,1);
         $resultToArray = json_decode($result);
-        $this->assertCount(3, $resultToArray);
+        $this->assertCount(2, $resultToArray);
+        foreach ($resultToArray as $game) {
+            $this->assertEquals('SEGA', $game->company);
+        }
     }
 
     public function testReturnExceptionWhenPageIsZero(): void
     {
         $this->expectException(GamePaginationException::class);
-        $this->sut->execute(0);
+        $this->sut->execute(1,0);
     }
 }

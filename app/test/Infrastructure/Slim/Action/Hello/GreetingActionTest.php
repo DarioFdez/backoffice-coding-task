@@ -8,7 +8,7 @@ use Tests\Infrastructure\Slim\Action\ActionTestCase;
 
 class GreetingActionTest extends ActionTestCase
 {
-    private const FILE_PATH = '/app/src/Infrastructure/Slim/Action/Hello/GreetingAction.php';
+    private const FILE_PATH = '/var/www/src/Infrastructure/Slim/Action/Hello/GreetingAction.php';
 
     public function testAction()
     {

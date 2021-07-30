@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\UseCase;
 
+use App\Domain\Games\GamePaginationException;
 use App\Domain\Games\GamesCollection;
 use App\Domain\GamesRepositoryInterface;
 
@@ -21,8 +22,14 @@ class getAllGamesUseCase
         $this->gamesRepository = $gamesRepository;
     }
 
-    public function execute(int $page): GamesCollection
+    /**
+     * @throws GamePaginationException
+     */
+    public function execute(int $page): string
     {
-        return $this->gamesRepository->getAllGames($page);
+        if ($page === 0) {
+            throw GamePaginationException::build();
+        }
+        return $this->gamesRepository->getAllGames($page)->toJson();
     }
 }

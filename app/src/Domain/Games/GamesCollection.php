@@ -26,6 +26,10 @@ class GamesCollection
 
     public function toJson(): string
     {
+        if (0 === $this->count()) {
+            return '{}';
+        }
+
         $data = [];
         foreach ($this->collection as $game) {
             $tags = [];
